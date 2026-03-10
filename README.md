@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Web App Template
 
-## Getting Started
+Next.js 16 starter with Supabase Auth, Drizzle ORM, shadcn/ui, and Zod validation.
 
-First, run the development server:
+## Setup
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in your values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Auth/DB are optional — the app runs without Supabase env vars.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Database (when needed)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Create a Supabase project
+2. Fill `DATABASE_URL` and Supabase keys in `.env.local`
+3. Run `supabase/setup.sql` in SQL Editor (triggers + RLS)
+4. Generate & apply migrations:
 
-## Learn More
+```bash
+npm run db:generate
+npm run db:migrate
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+app/                  — pages, layouts, error/loading/not-found
+lib/actions/          — server actions ("use server" + Zod)
+lib/hooks/            — custom React hooks
+lib/validations/      — Zod schemas (one per domain)
+lib/db/               — Drizzle schema & client
+lib/supabase/         — Supabase client/server/middleware
+lib/env.ts            — env validation (t3-oss)
+lib/auth.ts           — getSession() server helper
+components/ui/        — shadcn components
+components/providers/ — AuthProvider + useAuth()
+middleware.ts         — route protection (/dashboard/*)
+scripts/migrate.ts    — migration runner
+supabase/setup.sql    — triggers & RLS policies
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Patterns
 
-## Deploy on Vercel
+- **Forms**: React Hook Form + `zodResolver` + shadcn Form components
+- **Server actions**: `lib/actions/example.ts` — auth check, Zod parse, return `{ success }` or `{ error }`
+- **Cross-reload toasts**: `useToastFlag("key", "message")` hook + `sessionStorage` flag
+- **Error handling**: global `error.tsx`, `not-found.tsx`, `loading.tsx`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | Description |
+|---------|-------------|
+| `dev` | Start dev server |
+| `build` | Production build |
+| `db:generate` | Generate Drizzle migrations |
+| `db:migrate` | Apply migrations (dev) |
+| `db:migrate:prod` | Apply migrations (prod) |
+| `db:studio` | Open Drizzle Studio |
